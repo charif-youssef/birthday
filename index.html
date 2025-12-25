@@ -490,7 +490,7 @@
       background: rgba(0,0,0,.28);
       color:white;
       padding: 12px 12px;
-      font-size: 14px;
+      font-size: 16px; /* keep >=16px to prevent mobile zoom */
       outline:none;
     }
     .lockForm input:focus{ border-color: rgba(255,209,102,.7); }
@@ -745,6 +745,7 @@
     ];
     const PASSWORD = "issrae"; // single-use unlock code
     const UNLOCK_KEY = "birthdayUnlocked";
+    let musicPrimed = false;
 
 
     // Optional: show a specific date (YYYY-MM-DD). If empty, shows today.
@@ -791,6 +792,7 @@
       body.classList.remove("locked");
       sessionStorage.setItem(UNLOCK_KEY, "1");
       if (!silent) showToast("Unlocked 🎉");
+      primeAudio();
       if (location.hash === "#open") {
         setTimeout(() => openGift(), 200);
       }
@@ -816,6 +818,20 @@
         lockError.textContent = "Wrong password. Try again.";
       }
     });
+
+    // Pre-prime audio on first user action so play works on mobile
+    function primeAudio(){
+      if (musicPrimed) return;
+      musicPrimed = true;
+      song.muted = false;
+      song.play().then(() => {
+        song.pause();
+        song.currentTime = 0;
+      }).catch(() => {
+        musicPrimed = false;
+      });
+    }
+    window.addEventListener("pointerdown", primeAudio, { once: true });
 
     // Hearts (lighter on mobile)
     const heartsWrap = document.getElementById("hearts");
@@ -888,6 +904,7 @@
     async function setMusic(on, { silent = false } = {}) {
       if (on) {
         try {
+          primeAudio();
           await song.play();
           musicOn = true;
           musicBtn.textContent = "🔊 On";
